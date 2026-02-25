@@ -21,6 +21,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.gridlayout.widget.GridLayout;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -54,7 +56,7 @@ public class DecryptFragment extends Fragment {
     private EditText etDecryptKey;
     private TextView tvSelectedFiles;
     private Button btnDecrypt;
-    private LinearLayout gridImages;
+    private GridLayout gridImages;
     private LinearLayout selectionBar;
     private TextView tvSelectionCount;
     private Button btnDeleteSelected;
@@ -206,12 +208,11 @@ public class DecryptFragment extends Fragment {
 
     private void addImageToView(String imagePath, Uri sourceUri) {
         CardView cardView = new CardView(getContext());
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-                0,
-                300
-        );
-        cardParams.setMargins(4, 4, 4, 4);
+        GridLayout.LayoutParams cardParams = new GridLayout.LayoutParams();
         cardParams.width = 0;
+        cardParams.height = 300;
+        cardParams.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        cardParams.setMargins(4, 4, 4, 4);
         cardView.setLayoutParams(cardParams);
         cardView.setRadius(8);
         cardView.setCardElevation(4);
