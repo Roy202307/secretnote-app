@@ -15,6 +15,8 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private static final String PREFS_NAME = "NotePrefs";
     private static final String NOTE_KEY = "saved_note";
+    private static final String ENTRY_CODE_KEY = "entry_code";
+    private String entryCode = "字码开门";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,8 +26,9 @@ public class MainActivity extends AppCompatActivity {
         noteEditor = findViewById(R.id.noteEditor);
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
-        // 加载保存的笔记
+        // 加载保存的笔记和入口密码
         noteEditor.setText(prefs.getString(NOTE_KEY, ""));
+        entryCode = prefs.getString(ENTRY_CODE_KEY, "字码开门");
 
         // 监听输入，检测隐藏入口
         noteEditor.addTextChangedListener(new TextWatcher() {
@@ -35,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String text = s.toString().trim();
-                if (text.endsWith("字码开门")) {
+                if (text.endsWith(entryCode)) {
                     noteEditor.setText("");
                     openSecretActivity();
                 }

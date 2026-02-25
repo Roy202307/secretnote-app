@@ -66,6 +66,9 @@ public class SecretActivity extends AppCompatActivity {
     private LinearLayout imageContainer;
     private File cacheDir;
     private List<String> cacheFiles = new ArrayList<>();
+    private static final String PREFS_NAME = "NotePrefs";
+    private static final String ENTRY_CODE_KEY = "entry_code";
+    private SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,12 +78,16 @@ public class SecretActivity extends AppCompatActivity {
         imageContainer = findViewById(R.id.imageContainer);
         Button btnEncrypt = findViewById(R.id.btnEncrypt);
         Button btnDecrypt = findViewById(R.id.btnDecrypt);
+        Button btnSettings = findViewById(R.id.btnSettings);
 
         cacheDir = new File(getCacheDir(), "secret_images");
         cacheDir.mkdirs();
 
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+
         btnEncrypt.setOnClickListener(v -> pickImages());
         btnDecrypt.setOnClickListener(v -> pickXbbFiles());
+        btnSettings.setOnClickListener(v -> showSettingsDialog());
 
         checkAndRequestPermissions();
     }
@@ -449,6 +456,36 @@ public class SecretActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void showSettingsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_settings, null);
+        TextView tvCurrentCode = dialogView.findViewById(R.id.tvCurrentCode);
+        EditText etNewCode = dialogView.findViewById(R.id.etNewCode);
+
+        // 显示当前入口密码
+        String currentCode = prefs.getString(ENTRY_CODE_KEY, "字码开门");
+        tvCurrentCode.setText(currentCode);
+
+        builder.setTitle("设置入口密码")
+                .setView(dialogView)
+                .setPositiveButton("保存", (dialog, which) -> {
+                    String newCode = etNewCode.getText().toString().trim();
+                    if (newCode.isEmpty()) {
+                        Toast.makeText(this, "入口密码不能为空", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (newCode.length() < 2) {
+                        Toast.makeText(this, "入口密码至少2个字符", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    // 保存新密码
+                    prefs.edit().putString(ENTRY_CODE_KEY, newCode).apply();
+                    Toast.makeText(this, "入口密码已修改为: " + newCode, Toast.LENGTH_LONG).show();
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 
     @Override
