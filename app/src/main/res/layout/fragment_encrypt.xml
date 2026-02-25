@@ -57,6 +57,13 @@
             android:textColor="@android:color/darker_gray"
             android:paddingBottom="8dp" />
 
+        <CheckBox
+            android:id="@+id/cbDeleteOriginal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="加密成功后删除原图片"
+            android:layout_marginBottom="16dp" />
+
         <Button
             android:id="@+id/btnEncrypt"
             android:layout_width="match_parent"

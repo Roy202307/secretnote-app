@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,6 +43,7 @@ public class EncryptFragment extends Fragment {
     private EditText etEncryptKey;
     private TextView tvSelectedImages;
     private Button btnEncrypt;
+    private CheckBox cbDeleteOriginal;
     private List<Uri> selectedImages = new ArrayList<>();
 
     @Nullable
@@ -53,6 +55,7 @@ public class EncryptFragment extends Fragment {
         tvSelectedImages = view.findViewById(R.id.tvSelectedImages);
         Button btnSelectImages = view.findViewById(R.id.btnSelectImages);
         btnEncrypt = view.findViewById(R.id.btnEncrypt);
+        cbDeleteOriginal = view.findViewById(R.id.cbDeleteOriginal);
 
         btnSelectImages.setOnClickListener(v -> selectImages());
         btnEncrypt.setOnClickListener(v -> encryptImages());
@@ -85,6 +88,7 @@ public class EncryptFragment extends Fragment {
         new Thread(() -> {
             int successCount = 0;
             int failCount = 0;
+            final boolean deleteOriginal = cbDeleteOriginal.isChecked();
 
             for (Uri imageUri : selectedImages) {
                 try {
@@ -95,6 +99,11 @@ public class EncryptFragment extends Fragment {
 
                     String xbbContent = encryptImage(imageBytes, key);
                     saveXbbFile(fileName, xbbContent);
+
+                    // 如果勾选了删除原文件
+                    if (deleteOriginal) {
+                        deleteOriginalFile(imageUri);
+                    }
 
                     successCount++;
                 } catch (Exception e) {
@@ -152,6 +161,17 @@ public class EncryptFragment extends Fragment {
 
         try (FileOutputStream fos = new FileOutputStream(xbbFile)) {
             fos.write(xbbContent.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private void deleteOriginalFile(Uri uri) {
+        Activity activity = getActivity();
+        if (activity == null) return;
+
+        try {
+            activity.getContentResolver().delete(uri, null, null);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
