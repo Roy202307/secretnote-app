@@ -21,8 +21,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.gridlayout.widget.GridLayout;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -56,7 +54,7 @@ public class DecryptFragment extends Fragment {
     private EditText etDecryptKey;
     private TextView tvSelectedFiles;
     private Button btnDecrypt;
-    private GridLayout gridImages;
+    private LinearLayout gridImages;
     private LinearLayout selectionBar;
     private TextView tvSelectionCount;
     private Button btnDeleteSelected;
@@ -207,11 +205,47 @@ public class DecryptFragment extends Fragment {
     }
 
     private void addImageToView(String imagePath, Uri sourceUri) {
+        // 创建包含图片的容器（每行2个图片，使用嵌套LinearLayout）
+        LinearLayout rowLayout = new LinearLayout(getContext());
+        rowLayout.setOrientation(LinearLayout.HORIZONTAL);
+        rowLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        // 获取当前gridImages中的子视图数量
+        int childCount = gridImages.getChildCount();
+        LinearLayout currentRow = null;
+
+        // 如果当前行还未满（需要2个图片），则使用当前行
+        if (childCount > 0) {
+            View lastView = gridImages.getChildAt(childCount - 1);
+            if (lastView instanceof LinearLayout) {
+                LinearLayout lastRow = (LinearLayout) lastView;
+                if (lastRow.getChildCount() < 2) {
+                    currentRow = lastRow;
+                }
+            }
+        }
+
+        // 如果当前行为空或已满，创建新行
+        if (currentRow == null) {
+            currentRow = new LinearLayout(getContext());
+            currentRow.setOrientation(LinearLayout.HORIZONTAL);
+            currentRow.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+            gridImages.addView(currentRow);
+        }
+
+        // 创建图片CardView
         CardView cardView = new CardView(getContext());
-        GridLayout.LayoutParams cardParams = new GridLayout.LayoutParams();
-        cardParams.width = 0;
-        cardParams.height = 300;
-        cardParams.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                0,
+                300
+        );
+        cardParams.weight = 1;
         cardParams.setMargins(4, 4, 4, 4);
         cardView.setLayoutParams(cardParams);
         cardView.setRadius(8);
@@ -244,7 +278,7 @@ public class DecryptFragment extends Fragment {
         });
 
         cardView.addView(imageView);
-        gridImages.addView(cardView);
+        currentRow.addView(cardView);
     }
 
     private void setupLongPress(ImageView imageView) {

@@ -2,11 +2,14 @@ package com.secretnote.app;
 
 import android.app.Activity;
 import android.content.ClipData;
+import android.content.ContentUris;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -169,10 +172,85 @@ public class EncryptFragment extends Fragment {
         if (activity == null) return;
 
         try {
-            activity.getContentResolver().delete(uri, null, null);
+            // 获取文件的真实路径
+            String path = getRealPathFromUri(uri);
+
+            if (path != null) {
+                // 对于 Android 10 及以上，使用 MediaStore API
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    try {
+                        // 通过路径查找 MediaStore ID
+                        String selection = MediaStore.Images.Media.DATA + "=?";
+                        String[] selectionArgs = new String[]{path};
+
+                        Cursor cursor = activity.getContentResolver().query(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                new String[]{MediaStore.Images.Media._ID},
+                                selection,
+                                selectionArgs,
+                                null
+                        );
+
+                        if (cursor != null) {
+                            if (cursor.moveToFirst()) {
+                                long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID));
+                                Uri deleteUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
+
+                                int deleted = activity.getContentResolver().delete(deleteUri, null, null);
+                                if (deleted > 0) {
+                                    System.out.println("文件删除成功: " + path);
+                                } else {
+                                    System.out.println("文件删除失败: " + path);
+                                }
+                            }
+                            cursor.close();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // 如果 MediaStore 删除失败，尝试直接删除文件
+                        File file = new File(path);
+                        if (file.exists()) {
+                            file.delete();
+                        }
+                    }
+                } else {
+                    // Android 10 以下，直接删除文件
+                    File file = new File(path);
+                    if (file.exists()) {
+                        file.delete();
+                    }
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private String getRealPathFromUri(Uri uri) {
+        Activity activity = getActivity();
+        if (activity == null) return null;
+
+        String path = null;
+        if ("content".equalsIgnoreCase(uri.getScheme())) {
+            String[] projection = {MediaStore.Images.Media.DATA};
+            Cursor cursor = null;
+            try {
+                cursor = activity.getContentResolver().query(uri, projection, null, null, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    int index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                    path = cursor.getString(index);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        } else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            path = uri.getPath();
+        }
+        return path;
     }
 
     private byte[] getBytesFromUri(Uri uri) throws IOException {
