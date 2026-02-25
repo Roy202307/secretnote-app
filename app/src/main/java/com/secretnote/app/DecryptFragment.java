@@ -5,10 +5,13 @@ import android.content.ClipData;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -20,6 +23,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
 import java.io.BufferedReader;
@@ -33,7 +37,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -42,13 +48,22 @@ import javax.crypto.spec.SecretKeySpec;
 public class DecryptFragment extends Fragment {
 
     private static final int PICK_XBB_FILE_REQUEST = 101;
+    private static final long LONG_PRESS_THRESHOLD = 500;
+
     private EditText etDecryptKey;
     private TextView tvSelectedFiles;
     private Button btnDecrypt;
     private LinearLayout gridImages;
+    private LinearLayout selectionBar;
+    private TextView tvSelectionCount;
+    private Button btnDeleteSelected;
     private List<Uri> selectedFiles = new ArrayList<>();
     private File cacheDir;
     private List<String> cacheFiles = new ArrayList<>();
+
+    private boolean isSelectionMode = false;
+    private Map<ImageView, ImageData> imageDataMap = new HashMap<>();
+    private List<ImageView> selectedImages = new ArrayList<>();
 
     @Nullable
     @Override
@@ -60,12 +75,16 @@ public class DecryptFragment extends Fragment {
         Button btnSelectFiles = view.findViewById(R.id.btnSelectFiles);
         btnDecrypt = view.findViewById(R.id.btnDecrypt);
         gridImages = view.findViewById(R.id.gridImages);
+        selectionBar = view.findViewById(R.id.selectionBar);
+        tvSelectionCount = view.findViewById(R.id.tvSelectionCount);
+        btnDeleteSelected = view.findViewById(R.id.btnDeleteSelected);
 
         cacheDir = new File(requireContext().getCacheDir(), "secret_images");
         cacheDir.mkdirs();
 
         btnSelectFiles.setOnClickListener(v -> selectFiles());
         btnDecrypt.setOnClickListener(v -> decryptFiles());
+        btnDeleteSelected.setOnClickListener(v -> deleteSelectedFiles());
 
         updateDecryptButton();
 
@@ -93,7 +112,13 @@ public class DecryptFragment extends Fragment {
         }
 
         new Thread(() -> {
-            gridImages.post(() -> gridImages.removeAllViews());
+            gridImages.post(() -> {
+                gridImages.removeAllViews();
+                imageDataMap.clear();
+                selectedImages.clear();
+                isSelectionMode = false;
+                selectionBar.setVisibility(View.GONE);
+            });
             cacheFiles.clear();
 
             int successCount = 0;
@@ -113,7 +138,8 @@ public class DecryptFragment extends Fragment {
 
                     // 显示图片
                     final String cachePath = cacheFile.getAbsolutePath();
-                    gridImages.post(() -> addImageToView(cachePath));
+                    final Uri sourceUri = fileUri;
+                    gridImages.post(() -> addImageToView(cachePath, sourceUri));
 
                     successCount++;
                 } catch (Exception e) {
@@ -177,22 +203,149 @@ public class DecryptFragment extends Fragment {
         return sb.toString();
     }
 
-    private void addImageToView(String imagePath) {
-        ImageView imageView = new ImageView(getContext());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
+    private void addImageToView(String imagePath, Uri sourceUri) {
+        CardView cardView = new CardView(getContext());
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                0,
                 300
         );
-        params.setMargins(0, 0, 8, 8);
-        imageView.setLayoutParams(params);
+        cardParams.setMargins(4, 4, 4, 4);
+        cardParams.width = 0;
+        cardView.setLayoutParams(cardParams);
+        cardView.setRadius(8);
+        cardView.setCardElevation(4);
+
+        ImageView imageView = new ImageView(getContext());
+        android.view.ViewGroup.LayoutParams imageParams = new android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        );
+        imageView.setLayoutParams(imageParams);
         imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
         imageView.setAdjustViewBounds(true);
         imageView.setImageBitmap(BitmapFactory.decodeFile(imagePath));
 
-        // 点击图片放大查看
-        imageView.setOnClickListener(v -> showFullScreenImage(imagePath));
+        // 保存图片数据
+        ImageData imageData = new ImageData(imagePath, sourceUri);
+        imageDataMap.put(imageView, imageData);
 
-        gridImages.addView(imageView);
+        // 长按事件
+        setupLongPress(imageView);
+
+        // 点击事件
+        imageView.setOnClickListener(v -> {
+            if (isSelectionMode) {
+                toggleImageSelection(imageView);
+            } else {
+                showFullScreenImage(imagePath);
+            }
+        });
+
+        cardView.addView(imageView);
+        gridImages.addView(cardView);
+    }
+
+    private void setupLongPress(ImageView imageView) {
+        imageView.setOnTouchListener(new View.OnTouchListener() {
+            private long pressStartTime = 0;
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        pressStartTime = System.currentTimeMillis();
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                        long pressDuration = System.currentTimeMillis() - pressStartTime;
+                        if (pressDuration > LONG_PRESS_THRESHOLD && pressDuration < 1000) {
+                            enterSelectionMode(imageView);
+                            return true;
+                        }
+                        // 短按,传递给点击事件
+                        v.performClick();
+                        return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void enterSelectionMode(ImageView initialImageView) {
+        isSelectionMode = true;
+        selectionBar.setVisibility(View.VISIBLE);
+        toggleImageSelection(initialImageView);
+        Toast.makeText(getContext(), "进入选择模式", Toast.LENGTH_SHORT).show();
+    }
+
+    private void toggleImageSelection(ImageView imageView) {
+        if (selectedImages.contains(imageView)) {
+            selectedImages.remove(imageView);
+            imageView.setColorFilter(null);
+        } else {
+            selectedImages.add(imageView);
+            imageView.setColorFilter(Color.argb(128, 0, 0, 255)); // 半透明蓝色遮罩
+        }
+        updateSelectionCount();
+    }
+
+    private void updateSelectionCount() {
+        tvSelectionCount.setText("已选择: " + selectedImages.size());
+        btnDeleteSelected.setEnabled(!selectedImages.isEmpty());
+    }
+
+    private void deleteSelectedFiles() {
+        if (selectedImages.isEmpty()) {
+            return;
+        }
+
+        Activity activity = getActivity();
+        if (activity == null) return;
+
+        new AlertDialog.Builder(getContext())
+                .setTitle("删除文件")
+                .setMessage("确定要删除选中的 " + selectedImages.size() + " 个文件吗?")
+                .setPositiveButton("删除", (dialog, which) -> {
+                    int deleteCount = 0;
+                    for (ImageView imageView : new ArrayList<>(selectedImages)) {
+                        ImageData imageData = imageDataMap.get(imageView);
+                        if (imageData != null) {
+                            try {
+                                activity.getContentResolver().delete(imageData.sourceUri, null, null);
+                                deleteCount++;
+
+                                // 从视图中移除
+                                View parent = (View) imageView.getParent();
+                                if (parent != null) {
+                                    View grandParent = (View) parent.getParent();
+                                    if (grandParent != null) {
+                                        gridImages.removeView(grandParent);
+                                    }
+                                }
+
+                                imageDataMap.remove(imageView);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
+                    Toast.makeText(getContext(), "已删除 " + deleteCount + " 个文件", Toast.LENGTH_SHORT).show();
+                    exitSelectionMode();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void exitSelectionMode() {
+        isSelectionMode = false;
+        selectedImages.clear();
+        selectionBar.setVisibility(View.GONE);
+
+        // 清除所有图片的选择状态
+        for (ImageView imageView : imageDataMap.keySet()) {
+            imageView.setColorFilter(null);
+        }
     }
 
     private void showFullScreenImage(String imagePath) {
@@ -287,6 +440,16 @@ public class DecryptFragment extends Fragment {
 
             updateSelectedCount();
             updateDecryptButton();
+        }
+    }
+
+    static class ImageData {
+        String cachePath;
+        Uri sourceUri;
+
+        ImageData(String cachePath, Uri sourceUri) {
+            this.cachePath = cachePath;
+            this.sourceUri = sourceUri;
         }
     }
 }

@@ -61,6 +61,33 @@
         android:enabled="false"
         android:layout_marginBottom="16dp" />
 
+    <LinearLayout
+        android:id="@+id/selectionBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@android:color/darker_gray"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvSelectionCount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="已选择: 0"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:gravity="center_vertical" />
+
+        <Button
+            android:id="@+id/btnDeleteSelected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="删除选中"
+            android:backgroundTint="@android:color/holo_red_light" />
+    </LinearLayout>
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
