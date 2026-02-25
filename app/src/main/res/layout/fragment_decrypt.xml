@@ -93,11 +93,10 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <GridLayout
+        <LinearLayout
             android:id="@+id/gridImages"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:columnCount="2"
             android:orientation="horizontal" />
     </ScrollView>
 
