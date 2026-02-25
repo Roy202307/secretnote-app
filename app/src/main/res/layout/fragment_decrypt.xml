@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="浏览加密图片"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:paddingBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="输入解密秘钥"
+        android:textSize="14sp"
+        android:paddingBottom="8dp" />
+
+    <EditText
+        android:id="@+id/etDecryptKey"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输入秘钥"
+        android:inputType="textPassword"
+        android:padding="12dp"
+        android:background="@android:drawable/edit_text"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="选择 .XBB 文件"
+        android:textSize="14sp"
+        android:paddingBottom="8dp" />
+
+    <Button
+        android:id="@+id/btnSelectFiles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="选择文件"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/tvSelectedFiles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="已选择: 0 个文件"
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnDecrypt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="解密浏览"
+        android:enabled="false"
+        android:layout_marginBottom="16dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <GridLayout
+            android:id="@+id/gridImages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:orientation="horizontal" />
+    </ScrollView>
+
+</LinearLayout>

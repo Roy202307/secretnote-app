@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="设置"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:paddingBottom="24dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="当前入口密码"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvCurrentCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="字码开门"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:padding="16dp"
+            android:background="@android:drawable/edit_text"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="修改入口密码"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:paddingBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etNewCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="请输入新密码"
+            android:padding="12dp"
+            android:background="@android:drawable/edit_text"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/btnSaveCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="保存密码" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="在记事本中输入此密码并回车即可进入加密界面"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="24dp" />
+
+    </LinearLayout>
+
+</ScrollView>

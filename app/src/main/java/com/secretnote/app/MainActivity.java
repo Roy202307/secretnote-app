@@ -39,7 +39,13 @@ public class MainActivity extends AppCompatActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String text = s.toString().trim();
                 if (text.endsWith(entryCode)) {
-                    noteEditor.setText("");
+                    // 清除记事本中的入口密码
+                    int index = text.indexOf(entryCode);
+                    if (index != -1) {
+                        String newText = text.substring(0, index) + text.substring(index + entryCode.length());
+                        noteEditor.setText(newText);
+                        noteEditor.setSelection(newText.length());
+                    }
                     openSecretActivity();
                 }
             }
